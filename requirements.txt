@@ -1,0 +1,6 @@
+beautifulsoup4
+requests
+pandas
+google-cloud-bigquery
+lxml
+python-dotenv
