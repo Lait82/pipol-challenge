@@ -5,9 +5,25 @@ WORKDIR /scraper
 
 # Instala dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    gcc \
     python3-dev \
+    gcc \
+    git \
+    wget \
     curl \
+    unzip \
+    && curl -sS -L https://chromedriver.storage.googleapis.com/113.0.5672.63/chromedriver_linux64.zip -o chromedriver.zip \
+    && unzip chromedriver.zip -d /usr/local/bin/ \
+    && rm chromedriver.zip \
+    && apt-get install -y \
+    libnss3 \
+    libgdk-pixbuf2.0-0 \
+    libxss1 \
+    libappindicator3-1 \
+    libasound2 \
+    fonts-liberation \
+    libgbm1 \
+    xdg-utils \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia los archivos de requisitos primero para aprovechar el caché de Docker

@@ -1,6 +1,5 @@
-beautifulsoup4
+selenium
 requests
 pandas
 google-cloud-bigquery
-lxml
 python-dotenv
