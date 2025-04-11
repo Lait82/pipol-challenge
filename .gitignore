@@ -31,6 +31,7 @@ share/python-wheels/
 .devcontainer/devcontainer_default.json
 MANIFEST
 credentials.json
+.settings.json
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

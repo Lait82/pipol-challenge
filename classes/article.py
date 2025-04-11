@@ -2,7 +2,7 @@ from selenium.webdriver.remote.webelement import WebElement
 import os
 import requests
 from selenium.webdriver.common.by import By
-from bs4 import BeautifulSoup
+import logging
 
 
 
@@ -16,37 +16,40 @@ class Article:
         self.img_url = self._get_img_url()
 
 
-    def _get_kicker_text(self) -> str:
+    def _get_kicker_text(self) -> str | None:
         try:
             kicker_element = self._article.find_element(By.XPATH, "./div[1]/div[1]")
-            # soup = BeautifulSoup(kicker_element.get_attribute('innerHTML'), "html.parser")
-            # print(soup.prettify())
-            # input('This one worked')
         except Exception:
-            # try:
-            #     kicker_element = self._article.find_element(By.XPATH, "./div[1]")
-            # except Exception:
-            soup = BeautifulSoup(self._article.get_attribute('innerHTML'), "html.parser")
-            print(soup.prettify())
-            input('HALTING EXECUTION')
+            logging.warning("Kicker not found.")
+            return None
         return kicker_element.text
     
-    def _get_title_text(self) -> str:
-        title_element = self._article.find_element(By.XPATH, ".//h2")
+
+    def _get_title_text(self) -> str | None:
+        try:
+            title_element = self._article.find_element(By.XPATH, ".//h2")
+        except Exception: 
+            logging.warning("Title not found.")
+            return None
         return title_element.text
 
+
     def _get_link(self) -> str:
-        link_element = self._article.find_element(By.XPATH, ".//a")
+        try:
+            link_element = self._article.find_element(By.XPATH, ".//a")
+        except Exception:
+            logging.warning("Link not found.")
         return link_element.get_attribute('href')
+    
     
     def _get_img_url(self) -> str:
         try:
             img_element = self._article.find_element(By.XPATH, ".//img")
         except Exception: 
-            soup = BeautifulSoup(self._article.get_attribute('innerHTML'), "html.parser")
-            print(soup.prettify())
-            input('HALTING EXECUTION img')
+            logging.warning("Image not found.")
         return img_element.get_attribute('src')
+    
+
 
     ######### PUBLIC METHODS #########
     # En el challenge decia que habia que scrapear la imagen, pero lei que bigquery no esta pensado para subir binarios
