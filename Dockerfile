@@ -11,11 +11,6 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     unzip \
-    chrome \
-    && chromeVersion="$(chrome --version | grep -Eo '([0-9]{1,4}\.){3}[0-9]{1,4}')" \
-    && curl -sS -L https://chromedriver.storage.googleapis.com/$chromeVersion/chromedriver_linux64.zip -o chromedriver.zip \
-    && unzip chromedriver.zip -d /usr/local/bin/ \
-    && rm chromedriver.zip \
     && apt-get install -y \
     libnss3 \
     libgdk-pixbuf2.0-0 \
