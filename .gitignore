@@ -28,7 +28,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.devcontainer/devcontainer_default.json
+.devcontainer
 devcontainer
 MANIFEST
 credentials.json
