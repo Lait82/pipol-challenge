@@ -57,7 +57,7 @@ def main():
     bigquery_client = get_bigquery_client()
     load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
     load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
-    load_df_to_bigquery(capitalized_words_df, word_counts_df, 'capitalized_words')
+    load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
 
 if __name__ == "__main__":
     main()
