@@ -2,6 +2,7 @@
 from dotenv import load_dotenv
 import logging
 import argparse
+import os
 
 
 # Scraper
@@ -29,9 +30,9 @@ def set_up_driver() -> webdriver.Chrome:
     return webdriver.Chrome(options=chrome_options)
 
 
-def main(ai_scraping: bool):
+
+def main(ai_scraping: bool = False):
     # Basic setup.
-    load_dotenv()
     my_url = 'https://www.yogonet.com/international/'    
     driver = set_up_driver()
     driver.get(my_url)
@@ -75,11 +76,50 @@ def main(ai_scraping: bool):
 
     logging.info("Ejecución finalizada.")
 
+def deps_checker() -> bool:
+    # Check de archivos
+    env_files = [
+        "./.env",
+        "./credentials.json"
+        ]
+    for file_path in env_files:
+        if not(os.path.exists(file_path)) or os.path.getsize(file_path) <= 0:
+            logging.fatal(f"The file '{var}' is missing or it's empty.")
+            exit()
+
+    # Vars needed
+    env_vars = [
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        'BIGQUERY_PROJECT_NAME',
+        'BIGQUERY_DATASET',
+        'HF_API_KEY'
+    ]
+
+    for var in env_vars:
+        if os.getenv(var) == None:
+            logging.fatal(f"The variable '{var}' in the .env file is not set.")
+            exit()
+    
+
 if __name__ == "__main__":
+    # Args
     parser = argparse.ArgumentParser(
         description="Script that scrapes info from a news website and uploads some metrics of the info."
     )
+    parser.add_argument("--local", action="store_true", help="If set, enables cli features and testing. If not set, the script assumes everything is setted properly.")
     parser.add_argument("--ai-based-scraping", action="store_true", help="If set, enables AI-based scraping logic.")
     args = parser.parse_args()
 
-    main(args.ai_based_scraping)
+    if(args.local):
+        # Deps checker
+        load_dotenv()
+        deps_checker()
+    
+    # CLI override
+    if args.ai_based_scraping:
+        ai_scraping = True
+    else:
+        # Env fallback
+        ai_scraping = os.getenv("AI_BASED_SCRAPING", "false").lower() == "true"
+
+    main(ai_scraping)
