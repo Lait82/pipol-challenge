@@ -9,13 +9,13 @@ import re
 import os
 
 # Data
-import pandas as pd
-from collections import Counter
-from classes.article_scraper import ArticleScraper
+from scraping.article_scraper import ArticleScraper
+from data_processing.extract_metrics import extract_metrics_from_articles
 
 # Cloud
 from clients.bigquery_client import get_client as get_bigquery_client
 from google.cloud import bigquery
+from loaders.bigquery_loader import load_df_to_bigquery
 
 def set_up_driver() -> webdriver.Chrome:
     chrome_options = ChromeOptions() 
@@ -27,15 +27,14 @@ def set_up_driver() -> webdriver.Chrome:
 
 
 def main():
-
-    # Basic setup
+    # Basic setup.
     load_dotenv()
     my_url = 'https://www.yogonet.com/international/'    
     driver = set_up_driver()
     driver.get(my_url)
 
 
-    # Logger setup
+    # Logger setup.
     logging.basicConfig(
         level=logging.INFO,
         format='[%(levelname)s] %(asctime)s - %(message)s',
@@ -45,74 +44,20 @@ def main():
         ]
     )
     
-    # Scrape the site
+    # Scrape the site.
     scraper = ArticleScraper(driver)
     articles = scraper.get_articles()
 
-    # Data processing 
-    capitalized_words = []
+    # Process data.
+    word_counts_df, \
+    char_counts_df, \
+    capitalized_words_df = extract_metrics_from_articles(articles)
 
-    word_counter = Counter({})
-    char_counter = Counter({})
-
-    for a in articles:
-        title = a.title
-        if title is None:
-            continue
-
-        # Contar caracteres normalizados (lower, sin puntuación)
-        clean_chars = list(title)
-        char_counter.update(clean_chars)
-
-        # Separar palabras normalizadas y contar
-        words = re.findall(r'\b\w+\b', title.lower())
-        word_counter.update(words)
-
-        # Palabras capitalizadas tal como están en el título
-        capitalized_words.extend(
-            [w for w in title.split() if w.istitle()]
-        )
-
-    # Convertimos a pandas Series
-    word_counts = pd.Series(word_counter).sort_values(ascending=False)
-    char_counts = pd.Series(char_counter).sort_values(ascending=False)
-
-    # Lista única de capitalizadas si querés
-    unique_capitalized = list(set(capitalized_words))
-
-    print("Palabras más comunes:")
-    print(word_counts.head(1))
-    print("Caracteres más comunes:")
-    print(char_counts.head(10))
-    print("Palabras capitalizadas:", unique_capitalized)
-
-
-    ##### CLOUD
-    word_counts_df = word_counts.reset_index().rename(columns={"index": "word", 0: "count"})
-    char_counts_df = word_counts.reset_index().rename(columns={"index": "character", 0: "count"})
-    capitalized_words_df = pd.DataFrame(unique_capitalized, columns=["word"])
-
-    # input("halting")
-    # Nombre completo de la tabla
-    project_name = os.getenv("BIGQUERY_PROJECT_NAME")
-    dataset = os.getenv("BIGQUERY_DATASET")
-
-    # Configuración del job de carga y client
+    # Load the dta to bigquery.
     bigquery_client = get_bigquery_client()
-    job_config = bigquery.LoadJobConfig(
-        write_disposition="WRITE_APPEND",
-    )
-
-    # Ejecutar el job
-    job = bigquery_client.load_table_from_dataframe(word_counts_df, '.'.join((project_name, dataset, "word_frequency")), job_config=job_config)
-    job = bigquery_client.load_table_from_dataframe(char_counts_df, '.'.join((project_name, dataset, "char_frequency")), job_config=job_config)
-    job = bigquery_client.load_table_from_dataframe(capitalized_words_df, '.'.join((project_name, dataset, "capitalized_words")), job_config=job_config)
-
-
-    # Esperar a que termine (bloqueante)
-    job.result()
-
-    logging.info("Tablas subidas")
+    load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
+    load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
+    load_df_to_bigquery(capitalized_words_df, word_counts_df, 'capitalized_words')
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@ import os
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-def get_client():
+def get_client() -> bigquery.Client:
 
     credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if not credentials_path:
