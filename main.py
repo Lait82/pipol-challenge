@@ -67,12 +67,20 @@ def main(ai_scraping: bool = False):
 
     # Load the dta to bigquery.
     bigquery_client = get_bigquery_client()
-    if(len(word_counts_df)):
-        load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
-    if(len(capitalized_words_df)):
-        load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
-    if(len(char_counts_df)):
-        load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
+
+    # Since AI scraping may fail, only uploads data if theres any.
+    if(ai_scraping):
+        if(len(word_counts_df)):
+            load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
+        if(len(capitalized_words_df)):
+            load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
+        if(len(char_counts_df)):
+            load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
+    load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
+    load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
+    load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
+    
+    
 
     logging.info("Ejecución finalizada.")
 
@@ -90,7 +98,7 @@ def deps_checker() -> bool:
     # Vars needed
     env_vars = [
         'GOOGLE_APPLICATION_CREDENTIALS',
-        'BIGQUERY_PROJECT_NAME',
+        'GOOGLE_PROJECT_ID',
         'BIGQUERY_DATASET',
         'HF_API_KEY'
     ]
