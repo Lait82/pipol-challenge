@@ -1,20 +1,24 @@
+# Script
+from dotenv import load_dotenv
+import logging
+import argparse
+
+
 # Scraper
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-
-# Basic
-from dotenv import load_dotenv
-import logging
-import re
-import os
-
-# Data
 from scraping.article_scraper import ArticleScraper
+from scraping.dynamic_article_parser import DynamicArticleParser
+
+
+# Data processing
 from data_processing.extract_metrics import extract_metrics_from_articles
 
-# Cloud
+# Clients
 from clients.bigquery_client import get_client as get_bigquery_client
-from google.cloud import bigquery
+from clients.openai_client import get_client as get_openai_client
+
+# Cloud
 from loaders.bigquery_loader import load_df_to_bigquery
 
 def set_up_driver() -> webdriver.Chrome:
@@ -26,12 +30,13 @@ def set_up_driver() -> webdriver.Chrome:
     return webdriver.Chrome(options=chrome_options)
 
 
-def main():
+def main(ai_scraping: bool):
     # Basic setup.
     load_dotenv()
     my_url = 'https://www.yogonet.com/international/'    
     driver = set_up_driver()
     driver.get(my_url)
+    scraper = ArticleScraper(driver)
 
 
     # Logger setup.
@@ -44,9 +49,18 @@ def main():
         ]
     )
     
+    
     # Scrape the site.
-    scraper = ArticleScraper(driver)
-    articles = scraper.get_articles()
+    articles = None
+    if(ai_scraping):
+        # AI based analysis.
+        openai_client = get_openai_client()
+        parser = DynamicArticleParser(openai_client)
+        articles = scraper.get_ia_scraped_articles(parser)
+    
+    else:
+        articles = scraper.get_articles()
+    
 
     # Process data.
     word_counts_df, \
@@ -59,5 +73,13 @@ def main():
     load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
     load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
 
+    logging.info("Ejecución finalizada.")
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Script that scrapes info from a news website and uploads some metrics of the info."
+    )
+    parser.add_argument("--ai-based-scraping", action="store_true", help="If set, enables AI-based scraping logic.")
+    args = parser.parse_args()
+
+    main(args.ai_based_scraping)

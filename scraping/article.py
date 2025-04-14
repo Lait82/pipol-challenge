@@ -3,6 +3,7 @@ import os
 import requests
 from selenium.webdriver.common.by import By
 import logging
+from .dto.article import ArticleDTO
 
 
 
@@ -63,4 +64,13 @@ class Article:
                 if chunk:
                     file.write(chunk)
         print(f"Image downloaded successfully")
+
+    def to_dto(self) -> ArticleDTO:
+        return ArticleDTO(
+            title=self.title,
+            kicker=self.kicker,
+            link=self.link,
+            img_url=self.img_url
+        )
+
     
