@@ -5,7 +5,7 @@ from collections import Counter
 import re
 from .transformers import *
 
-def extract_metrics_from_articles(articles: list[Article]) -> tuple[pd.DataFrame]:
+def extract_metrics_from_articles(articles: list[Article]) -> tuple[pd.DataFrame | None]:
     char_counter = Counter({})
     word_counter = Counter({})
     capitalized_words = []

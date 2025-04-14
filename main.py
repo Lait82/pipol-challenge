@@ -16,7 +16,6 @@ from data_processing.extract_metrics import extract_metrics_from_articles
 
 # Clients
 from clients.bigquery_client import get_client as get_bigquery_client
-from clients.openai_client import get_client as get_openai_client
 
 # Cloud
 from loaders.bigquery_loader import load_df_to_bigquery
@@ -54,14 +53,12 @@ def main(ai_scraping: bool):
     articles = None
     if(ai_scraping):
         # AI based analysis.
-        openai_client = get_openai_client()
-        parser = DynamicArticleParser(openai_client)
+        parser = DynamicArticleParser()
         articles = scraper.get_ia_scraped_articles(parser)
     
     else:
         articles = scraper.get_articles()
     
-
     # Process data.
     word_counts_df, \
     char_counts_df, \
@@ -69,9 +66,12 @@ def main(ai_scraping: bool):
 
     # Load the dta to bigquery.
     bigquery_client = get_bigquery_client()
-    load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
-    load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
-    load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
+    if(len(word_counts_df)):
+        load_df_to_bigquery(bigquery_client, word_counts_df, 'word_frequency')
+    if(len(capitalized_words_df)):
+        load_df_to_bigquery(bigquery_client, capitalized_words_df, 'capitalized_words')
+    if(len(char_counts_df)):
+        load_df_to_bigquery(bigquery_client, char_counts_df, 'char_frequency')
 
     logging.info("Ejecución finalizada.")
 
