@@ -1,15 +1,21 @@
+# Scraper
 from selenium import webdriver
-
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 
-from classes.article_scraper import ArticleScraper
-
-from collections import Counter
-import pandas as pd
+# Basic
+from dotenv import load_dotenv
 import logging
 import re
+import os
+
+# Data
+import pandas as pd
+from collections import Counter
+from classes.article_scraper import ArticleScraper
+
+# Cloud
+from clients.bigquery_client import get_client as get_bigquery_client
+from google.cloud import bigquery
 
 def set_up_driver() -> webdriver.Chrome:
     chrome_options = ChromeOptions() 
@@ -22,7 +28,8 @@ def set_up_driver() -> webdriver.Chrome:
 
 def main():
 
-    # Driver setup
+    # Basic setup
+    load_dotenv()
     my_url = 'https://www.yogonet.com/international/'    
     driver = set_up_driver()
     driver.get(my_url)
@@ -79,6 +86,33 @@ def main():
     print(char_counts.head(10))
     print("Palabras capitalizadas:", unique_capitalized)
 
+
+    ##### CLOUD
+    word_counts_df = word_counts.reset_index().rename(columns={"index": "word", 0: "count"})
+    char_counts_df = word_counts.reset_index().rename(columns={"index": "character", 0: "count"})
+    capitalized_words_df = pd.DataFrame(unique_capitalized, columns=["word"])
+
+    # input("halting")
+    # Nombre completo de la tabla
+    project_name = os.getenv("BIGQUERY_PROJECT_NAME")
+    dataset = os.getenv("BIGQUERY_DATASET")
+
+    # Configuración del job de carga y client
+    bigquery_client = get_bigquery_client()
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND",
+    )
+
+    # Ejecutar el job
+    job = bigquery_client.load_table_from_dataframe(word_counts_df, '.'.join((project_name, dataset, "word_frequency")), job_config=job_config)
+    job = bigquery_client.load_table_from_dataframe(char_counts_df, '.'.join((project_name, dataset, "char_frequency")), job_config=job_config)
+    job = bigquery_client.load_table_from_dataframe(capitalized_words_df, '.'.join((project_name, dataset, "capitalized_words")), job_config=job_config)
+
+
+    # Esperar a que termine (bloqueante)
+    job.result()
+
+    logging.info("Tablas subidas")
 
 if __name__ == "__main__":
     main()

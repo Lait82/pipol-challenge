@@ -4,3 +4,5 @@ pandas
 google-cloud-bigquery
 python-dotenv
 beautifulsoup4
+pyarrow
+pandas_gbq

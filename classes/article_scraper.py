@@ -11,5 +11,5 @@ class ArticleScraper:
     def get_articles(self) -> list[Article]:
         containers = self.driver.find_elements(By.XPATH, "//div[@slot and @data][.//div[@class='contenedor_dato_modulo '][div[@class='volanta_titulo']]]")
         articles = [Article(container) for container in containers]
-        logging.info("Successfully scraped ", len(articles), " news.")
+        logging.info("Successfully scraped {0} news.".format(len(articles)))
         return articles
